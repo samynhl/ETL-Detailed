@@ -2,4 +2,4 @@ pandas
 requests
 sqlalchemy
 psycopg2
-BeautifulSoup4
+python-dotenv
