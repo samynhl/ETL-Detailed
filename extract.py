@@ -2,54 +2,38 @@ import pandas as pd
 import requests
 from datetime import datetime
 import datetime
+import json
 
 from dotenv import load_dotenv
 
 import os
+import base64
+
+from requests import post
 
 load_dotenv(r'./.env')
 
 
 USER_ID = os.getenv("USER_ID") 
-TOKEN = os.getenv("TOKEN") 
+USER_SECRET = os.getenv("TOKEN") 
 
-# Creating an function to be used in other pyrhon files
-def return_dataframe(): 
-    input_variables = {
-        "Accept" : "application/json",
-        "Content-Type" : "application/json",
-        "Authorization" : "Bearer {token}".format(token=TOKEN)
+def get_token():
+    auth_string = USER_ID + ":" + USER_SECRET
+    auth_bytes = auth_string.encode("utf-8")
+    auth_base64 = str(base64.b64encode(auth_bytes), "utf-8")
+
+    url = "https://accounts.spotify.com/api/token"
+
+    headers = {
+        "Authorization": "Basic " + auth_base64,
+        "Content-Type" : "application/x-www-form-urlencoded"
     }
-     
-    today = datetime.datetime.now()
-    yesterday = today - datetime.timedelta(days=2)
-    yesterday_unix_timestamp = int(yesterday.timestamp()) * 1000
+    data = {"grant_type" : "client_credentials"}
 
-    # Download all songs you've listened to "after yesterday", which means in the last 24 hours      
-    r = requests.get("https://api.spotify.com/v1/me/player/recently-played?after={time}".format(time=yesterday_unix_timestamp), headers = input_variables)
+    result = post(url, headers=headers, data=data)
+    json_result = json.loads(result.content)
+    token = json_result["access_token"]
+    return token
 
-    data = r.json()
-    song_names = []
-    artist_names = []
-    played_at_list = []
-    timestamps = []
-
-    print(data)
-    # Extracting only the relevant bits of data from the json object      
-    for song in data["items"]:
-        song_names.append(song["track"]["name"])
-        artist_names.append(song["track"]["album"]["artists"][0]["name"])
-        played_at_list.append(song["played_at"])
-        timestamps.append(song["played_at"][0:10])
-        
-    # Prepare a dictionary in order to turn it into a pandas dataframe below       
-    song_dict = {
-        "song_name" : song_names,
-        "artist_name": artist_names,
-        "played_at" : played_at_list,
-        "timestamp" : timestamps
-    }
-    song_df = pd.DataFrame(song_dict, columns = ["song_name", "artist_name", "played_at", "timestamp"])
-    return song_df
-
-return_dataframe()
+token = get_token()
+print(token)
