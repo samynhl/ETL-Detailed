@@ -1,7 +1,3 @@
-import pandas as pd 
-import requests
-from datetime import datetime
-import datetime
 import json
 
 from dotenv import load_dotenv
@@ -28,12 +24,11 @@ def get_token():
         "Authorization": "Basic " + auth_base64,
         "Content-Type" : "application/x-www-form-urlencoded"
     }
-    data = {"grant_type" : "client_credentials"}
+    data = {
+        "grant_type" : "client_credentials",
+        "scope": "user-read-recently-played"}
 
     result = post(url, headers=headers, data=data)
     json_result = json.loads(result.content)
     token = json_result["access_token"]
     return token
-
-token = get_token()
-print(token)
